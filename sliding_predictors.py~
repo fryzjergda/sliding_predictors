@@ -31,15 +31,14 @@ def sliding_prediction():
     num_steps = int(((seqlen-window)/increment)+1)
     print(">sequence")
     print(seq)
-    #["RNAfold", "ProbKnot", "Fold", "CentroidFold", "CONTRAfold", "IPknot"]
     
-#    predictor = "IPknot"
     all_ss = ""
+    all_ss2=">sequence\n"+seq+"\n"
+
 
     for i in range(increment, window, increment):
-        print(">first")
-
-        after = '_'*(seqlen-i)
+        print(">1-"+str(i))
+        after = '-'*(seqlen-i)
 
         segment = seq[:i]
         
@@ -49,38 +48,42 @@ def sliding_prediction():
         
         segment_ss = ss+after
         all_ss += segment_ss+"\n"
+        all_ss2 += ">1-"+str(i)+"\n"+segment_ss+"\n"
         print(ss+after)
-        print(segment+after)
+        #print(segment+after)
     
     for i in range(0, num_steps):
-        print(">middle")
-
-        before = "_"*(i*increment)
+        
+        before = "-"*(i*increment)
+        
         segment = seq[i*increment:window+i*increment]
-        after = '_'*(seqlen-(i*increment+len(segment)))
-
+        after = '-'*(seqlen-(i*increment+len(segment)))
+        start = len(before)+1
+        end = start+window-1 
+        print(">"+str(start)+"-"+str(end))
         create_tempfile(segment)
         ss = prediction_method(predictor, 'seq.temp', segment)
         
         segment_ss = before+ss+after
         all_ss += segment_ss+"\n"
+        all_ss2 += ">"+str(start)+"-"+str(end)+"\n"+segment_ss+"\n"
         print(before+ss+after)
-        print(before+segment+after)
 
     step = (i+1)*increment
 
     for i in range(step, seqlen, increment):
-        print(">last")
 
         segment = seq[i:]    
-        before = '_'*(seqlen-len(segment)) 
-
+        before = '-'*(seqlen-len(segment)) 
+        
+        start = len(before)+1
+        print(">"+str(start)+"-"+str(seqlen))
         create_tempfile(segment)
         ss = prediction_method(predictor, 'seq.temp', segment)
         
         segment_ss = before+ss
         all_ss += segment_ss+"\n"
-        print(before+segment)
+        all_ss2 += ">"+str(start)+"-"+str(seqlen)+"\n"+segment_ss+"\n"
         print(before+ss)
     
     cons_temp = open('cons_temp.txt', 'w')
@@ -89,8 +92,12 @@ def sliding_prediction():
 
     cmd = "find_SS_consensus cons_temp.txt 0.5"
     os.system(cmd)
-    cmd = "mv single_consensus.txt "+seq_in.split(".")[0]+"_"+predictor+"_"+str(window)+"_"+str(increment)+".ss"   
+    cmd = "mv single_consensus.txt "+seq_in.split(".")[0]+"_"+predictor+"_"+str(window)+"_"+str(increment)+"_consensus.ss"   
     os.system(cmd)
+    
+    out = open(seq_in.split(".")[0]+"_"+predictor+"_"+str(window)+"_"+str(increment)+"_all.ss", 'w')
+    out.write(all_ss2)
+    out.close()
 
 def create_tempfile(segment):
     
@@ -112,7 +119,7 @@ def read_files():
 def prediction_method(predictor, sequence, segment):
 
     sequencelen = len(segment)
-    print(sequencelen)
+    #print(sequencelen)
     
     if predictor == "LinearFold_C":
         cmd = "cat " + sequence + " | linearfold"
