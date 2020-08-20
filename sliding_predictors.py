@@ -120,7 +120,7 @@ def spotrna_ncbp(sequence, ss):
 #    print("clean spot-RNA")
     
     pair_list = get_pair_list(ss)
-    ss_clean = remove_nc(sequence, pair_list)
+    ss_clean = remove_nc(sequence, pair_list, ss)
     
     return ss_clean
     
@@ -156,25 +156,32 @@ def get_pair_list(ss):
 
     
 
-def remove_nc(sequence, pair_list):
+def remove_nc(sequence, pair_list, ss_nc):
 #    print("removing non canonical base pairs")
-    print(sequence)
-    print(pair_list)
     nt_dict = {"A":"U","U":"A","C":"G","G":"C"}
 
-    pair_list_can = []
+    pair_list_to_remove = []
     for i in range(0, len(pair_list)):
-        print(seq[pair_list[i][0]])
         nt1 = seq[pair_list[i][0]]
         nt2 = seq[pair_list[i][1]]
-        print(nt1, "nt1")
-        print(nt_dict[nt1], "nt1 dict")
-        if nt_dict[nt1] == nt2:
-            pair_list_can.append(pair_list[i])
+        if nt_dict[nt1] != nt2:
+            pair_list_to_remove.append(pair_list[i])
     
-    print(pair_list)
-    print(pair_list_can)
+    l = []
 
+    ss_clean_l = list(ss_nc)
+    
+    if len(pair_list_to_remove) != 0:
+        for i in range(0, len(pair_list_to_remove)):
+            ss_clean_l[pair_list_to_remove[i][0]] = "." 
+            ss_clean_l[pair_list_to_remove[i][1]] = "."
+
+    ss_clean = ''.join(ss_clean_l)
+    
+    return ss_clean
+
+
+    
 def prediction_method(predictor, sequence, segment):
 
     sequencelen = len(segment)
@@ -246,7 +253,6 @@ def prediction_method(predictor, sequence, segment):
         cmd = "ct2dot temp.ct 1 temp.dot"
         os.system(cmd)
         ss_nc = os.popen("cat temp.dot").read().splitlines()[2]
-        print(ss_nc)
         ss = spotrna_ncbp(segment, ss_nc)
         
     return ss
