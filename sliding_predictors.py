@@ -116,9 +116,69 @@ def read_files():
     return seq
 
 
+def spotrna_ncbp(sequence, ss):
+#    print("clean spot-RNA")
+    
+    pair_list = get_pair_list(ss)
+    ss_clean = remove_nc(sequence, pair_list)
+    
+    return ss_clean
+    
+    
+
+def get_pair_list(ss):
+#    print("get pair list")
+    
+    db_list = [['(',')'],['[',']'],['<','>'],['{','}'],['A','a'],['B','b'],['C','c'],['D','d'],['E','e']]
+    allowed_characters = '()[]<>{}AaBbCcDdEe.'
+
+    stack_list =[]
+    pairs_list =[]
+
+
+    # stack-pop for all versions of brackets form the db_list    
+    for i in range(0, len(db_list)):
+        for c, s in enumerate(ss):
+            if s == db_list[i][0]:
+                stack_list.append(c)
+            elif s == db_list[i][1]:
+                if len(stack_list) == 0:
+                    sys.exit("There is no opening bracket for nt position "+str(c+1)+'-'+ss[c])
+                elif s == db_list[i][1]:
+                    pairs_list.append([stack_list.pop(), c])
+        if len(stack_list) > 0:
+            err = stack_list.pop()
+            sys.exit("There is no closing bracket for nt position "+str(err)+'-'+ss[err])
+
+    pairs_list_clean = [x for x in pairs_list if x != []]
+
+    return pairs_list
+
+    
+
+def remove_nc(sequence, pair_list):
+#    print("removing non canonical base pairs")
+    print(sequence)
+    print(pair_list)
+    nt_dict = {"A":"U","U":"A","C":"G","G":"C"}
+
+    pair_list_can = []
+    for i in range(0, len(pair_list)):
+        print(seq[pair_list[i][0]])
+        nt1 = seq[pair_list[i][0]]
+        nt2 = seq[pair_list[i][1]]
+        print(nt1, "nt1")
+        print(nt_dict[nt1], "nt1 dict")
+        if nt_dict[nt1] == nt2:
+            pair_list_can.append(pair_list[i])
+    
+    print(pair_list)
+    print(pair_list_can)
+
 def prediction_method(predictor, sequence, segment):
 
     sequencelen = len(segment)
+    print(segment, "segment")
     #print(sequencelen)
     
     if predictor == "LinearFold_C":
@@ -185,8 +245,9 @@ def prediction_method(predictor, sequence, segment):
         os.system(cmd)
         cmd = "ct2dot temp.ct 1 temp.dot"
         os.system(cmd)
-        ss = os.popen("cat temp.dot").read().splitlines()[2]
-        
+        ss_nc = os.popen("cat temp.dot").read().splitlines()[2]
+        print(ss_nc)
+        ss = spotrna_ncbp(segment, ss_nc)
         
     return ss
 

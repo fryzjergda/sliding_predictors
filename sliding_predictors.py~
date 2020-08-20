@@ -173,12 +173,28 @@ def prediction_method(predictor, sequence, segment):
             ss = os.popen(cmd).read().splitlines()[3]
         except:
             ss = '.'*(sequencelen)
-
+    elif predictor == "ContextFold":
+        cmd = "cp "+sequence+" "+PATH_TO_CONTEXTFOLD+". ; cd "+PATH_TO_CONTEXTFOLD+"; java -cp bin contextFold.app.Predict in:" +sequence
+        os.system(cmd)
+        cmd = "cp "+PATH_TO_CONTEXTFOLD+sequence+".pred ."        
+        os.system(cmd)
+        ss = os.popen("cat "+sequence+".pred").read().splitlines()[2]
+    # for SPOT-RNA i need to add function removing non-cnaonical pairings
+    elif predictor == "SPOT-RNA":
+        cmd = "SPOT-RNA.py --inputs "+sequence+" --outputs './'"    
+        os.system(cmd)
+        cmd = "ct2dot temp.ct 1 temp.dot"
+        os.system(cmd)
+        ss = os.popen("cat temp.dot").read().splitlines()[2]
+        
+        
     return ss
 
 if __name__ == '__main__':
 
-    predictors = ["LinearFold_C","LinearFold_V","RNAfold", "ProbKnot", "Fold", "CentroidFold", "CONTRAfold", "IPknot"]
+    PATH_TO_CONTEXTFOLD = "/home/fryzjer/Apps/ContextFold_1_00/"
+    predictors = ['SPOT-RNA']
+#    predictors = ["LinearFold_C","LinearFold_V","RNAfold", "ProbKnot", "Fold", "CentroidFold", "CONTRAfold", "IPknot"]
     seq_in, increment, window = argument_parser()
     seq = read_files()
     for i in range(0,len(predictors)):
@@ -186,5 +202,5 @@ if __name__ == '__main__':
         print(predictor)
         sliding_prediction()
  
-    os.system("rm seq.temp *.ps cons_temp.txt")
+    os.system("rm  *.ps cons_temp.txt seq.temp.pred")
     
